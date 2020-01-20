@@ -30,6 +30,10 @@ app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase};
   res.render("urls_index", templateVars);
 });
+app.get("/hello", (req, res) => {
+  let templateVars = { greeting: 'Hello World!'};
+  res.render("hello_world", templateVars);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
