@@ -21,7 +21,14 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xk": "http://www.google.com",
 };
-
+const users = {};
+const findUserByEmail = (email) => {
+  for (const user of Object.values(users)) {
+    if (user.email === email) {
+      return user;
+    }
+  }
+};
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
@@ -50,15 +57,42 @@ app.post("urls/:id", (req, res) => {
   
   res.redirect("/urls_show");
 });
+// registration, login, logout
+app.post("/register", (req, res) => {
+  if (req.body.email === ""  || req.body.password === "") {
+    res.status(400).end();
+  } else if (findUserByEmail()) {
+    res.status(400).end();
+  } else {
+    const newID = generateRandomString();
+    const userID = {};
+    userID.id = newID;
+    users[newID] = userID;
+    userID.email = req.body.email;
+    userID.password = req.body.password;
+    console.log(users);
+    res.cookie("userID", userID);
+    res.redirect("/urls");
+  }
+});
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
-  res.redirect("/urls");
+  res.cookie("password", req.body.password);
+  res.redirect("/login");
 });
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
 });
-
+app.get("/login", (req, res) => {
+  let templateVars = {username: req.cookies["username"], password: req.cookies["password"]};
+  res.render("urls_login", templateVars);
+});
+app.get("/register", (req, res) => {
+  let templateVars = {username: req.cookies["username"], password: req.cookies["password"]};
+  res.render("urls_register", templateVars);
+});
+//
 app.get("/", (req, res) => {
   res.send("Hello!");
 
@@ -95,7 +129,6 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};
   res.render("urls_show", templateVars);
 });
-
 
 
 

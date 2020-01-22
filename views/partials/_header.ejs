@@ -10,11 +10,13 @@
           <h6><%= username%></h6>
           <button type="submit" class="btn btn-primary">logout</button>
         </form>
-        <% } else{ %>  
-          <form method="POST" action="/login">
-          <label for="username">Enter username:</label>
-          <input class="form-control" type="text" name="username">
-          <button type="submit" class="btn btn-primary">login</button>
+
+      <% } else { %>
+        <form method="GET" action="/login">
+          <button type="submit" class="btn btn-primary" side="right">login</button>
+        </form>
+        <form method="GET" action="/Register">
+          <button type="submit" side="right" class="btn btn-primary"style="margin-left:1rem">Register</button>
         </form>
       <% } %>
     
