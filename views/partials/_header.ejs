@@ -11,9 +11,11 @@
       </div>
     </div>
     <% if(user) { %>
-      <form method="POST" action="/logout">
-        <h6><%= user.email%></h6>
-        <button type="submit" class="btn btn-primary">logout</button>
+      <form class="form-inline" method="POST" action="/logout">
+        <div>
+          Logged in as: <%= user.email%>
+          <button type="submit" class="btn btn-primary">logout</button>
+        </div>
       </form>
       <% } else{ %>  
         <form method="GET" action="/login">
