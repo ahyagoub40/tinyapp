@@ -7,7 +7,7 @@ const PORT = 8080;
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'userId',
-  keys: ["olive", "fan"]
+  keys: ["olive", "cheese"]
 }));
 app.set("view engine", "ejs");
 const { generateRandomString, findUserByEmail, urlForUser } = require('./helpers');
@@ -31,33 +31,6 @@ app.post("/urls", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
-  const userURL = urlForUser(req.session.userId, urlDatabase);
-  if (req.params.shortURL in userURL) {
-    delete userURL[req.params.shortURL];
-    res.redirect("/urls");
-  } else {
-    res.render("error", {ErrorMessage: "login or register, first", user: null});
-  }
-});
-app.post("/urls/:shortURL/edit", (req, res) => {
-  const userURL = urlForUser(req.session.userId, urlDatabase);
-  if (req.params.shortURL in userURL) {
-    userURL[req.params.shortURL]["longURL"] = req.body.longURL;
-    res.redirect("/urls");
-  } else {
-    res.render("error", {ErrorMessage: "login or register, first", user: null});
-  }
-});
-app.get("/urls/:shortURL/edit", (req, res) => {
-
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"], user: req.session.userId};
-  res.render("urls_show", templateVars);
-});
-app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]["longURL"];
-  res.redirect(longURL);
-});
 // registration, login, logout
 app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
@@ -95,12 +68,12 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 app.get("/login", (req, res) => {
-  
-  res.render("urls_login", {user: null});
+  console.log(req.session.userId);
+  res.render("urls_login", {user: users[req.session.userId]});
 });
 app.get("/register", (req, res) => {
 
-  res.render("urls_register", {user: null});
+  res.render("urls_register", {user: users[req.session.userId]});
 });
 //
 app.get("/", (req, res) => {
@@ -117,14 +90,14 @@ app.get("/set", (req, res) => {
   const a = 1;
   res.send(`a = ${a}`);
 });
-app.get("/fetch", (req, res) => {
-  res.send(`a = ${a}`);
-});
+// app.get("/fetch", (req, res) => {
+//   res.send(`a = ${a}`);
+// });
 app.get("/urls", (req, res) => {
   if (req.session.userId) {
     const userURL = urlForUser(req.session.userId, urlDatabase);
     let templateVars = { urls: userURL,
-      user: req.session.userId};
+      user: users[req.session.userId]};
     res.render("urls_index", templateVars);
   } else {
     res.render("error", {ErrorMessage: "login or register, first", user: null});
@@ -137,7 +110,7 @@ app.get("/hello", (req, res) => {
 });
 app.get("/urls/new", (req, res) => {
   if (req.session.userId) {
-    let templateVars = {user: req.session.userId};
+    let templateVars = {user: users[req.session.userId]};
     res.render("urls_new", templateVars);
   }
   res.redirect("/login");
@@ -146,8 +119,44 @@ app.get("/urls/:shortURL", (req, res) => {
   if (req.session.userId) {
     const userURL = urlForUser(req.session.userId, urlDatabase);
     if (req.params.shortURL in userURL) {
-      let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.session.userId};
+      let templateVars = { shortURL: req.params.shortURL, longURL: userURL[req.params.shortURL]["longURL"], user: users[req.session.userId]};
       res.render("urls_show", templateVars);
+    } else {
+      res.render("error", {ErrorMessage: "URL doesn't match the id", user: users[req.session.userId]});
+    }
+  } else {
+    res.render("error", {ErrorMessage: "login or register, first", user: null});
+  }
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const userURL = urlForUser(req.session.userId, urlDatabase);
+  if (req.params.shortURL in userURL) {
+    delete userURL[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    res.render("error", {ErrorMessage: "login or register, first", user: null});
+  }
+});
+app.post("/urls/:shortURL/edit", (req, res) => {
+  const userURL = urlForUser(req.session.userId, urlDatabase);
+  if (req.params.shortURL in userURL) {
+    userURL[req.params.shortURL]["longURL"] = req.body.longURL;
+    res.redirect("/urls");
+  } else {
+    res.render("error", {ErrorMessage: "login or register, first", user: null});
+  }
+});
+app.get("/urls/:shortURL/edit", (req, res) => {
+
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"], user: req.session.userId};
+  res.render("urls_show", templateVars);
+});
+app.get("/u/:shortURL", (req, res) => {
+  if (req.session.userId) {
+    const userURL = urlForUser(req.session.userId, urlDatabase);
+    if (req.params.shortURL in userURL) {
+      res.redirect(userURL[req.params.shortURL]["longURL"]);
     } else {
       res.render("error", {ErrorMessage: "URL doesn't match the id", user: req.session.userId});
     }
@@ -155,7 +164,6 @@ app.get("/urls/:shortURL", (req, res) => {
     res.render("error", {ErrorMessage: "login or register, first", user: null});
   }
 });
-
 
 
 app.listen(PORT, () => {
