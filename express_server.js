@@ -17,11 +17,9 @@ const generateRandomString = function() {
   return randomString;
 };
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xk": "http://www.google.com",
-};
+const urlDatabase = {};
 const users = {};
+
 const findUserByEmail = (email) => {
   for (const user of Object.values(users)) {
     if (user.email === email) {
@@ -29,34 +27,47 @@ const findUserByEmail = (email) => {
     }
   }
 };
+
+const urlForUser = function(id) {
+  const userLongURLs = {};
+  for (let [key, value] of Object.entries(urlDatabase)) {
+    if (value["user"] === id) {
+      userLongURLs[key] = value;
+    }
+  }
+  return userLongURLs;
+};
+
 app.post("/urls", (req, res) => {
+  
   const longURL = req.body.longURL;
+  console.log("longURL", longURL);
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
-  res.redirect(longURL);
+  urlDatabase[shortURL] = {};
+  urlDatabase[shortURL]["longURL"] = longURL;
+  // this only saves if the user is logged in, is it supposed to remember the user after logging out and in next time/
+  urlDatabase[shortURL]["user"] = req.cookies["user"];
+  res.redirect("/urls");
+  
+ 
+
 });
-// app.get("/u/:shortURL", (req, res) => {
-//   const longURL = urlDatabase[req.params.shortURL];
-//   res.redirect(longURL);
-// });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  console.log(urlDatabase[req.params.shortURL]["longURL"]);
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
 app.get("/urls/:shortURL/edit", (req, res) => {
 
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies["user"]};
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"], user: req.cookies["user"]};
   res.render("urls_show", templateVars);
 });
 app.post("/urls/:shortURL/edit", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL;
+  urlDatabase[req.params.shortURL]["longURL"] = req.body.longURL;
   res.redirect("/urls");
 });
-app.post("urls/:id", (req, res) => {
-  
-  res.redirect("/urls_show");
-});
+
 // registration, login, logout
 app.post("/register", (req, res) => {
   if (req.body.email === ""  || req.body.password === "") {
@@ -71,6 +82,8 @@ app.post("/register", (req, res) => {
     user.email = req.body.email;
     user.password = req.body.password;
     console.log(users);
+    
+
     res.cookie("user", newID);
     res.redirect("/urls");
   }
@@ -94,12 +107,12 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 app.get("/login", (req, res) => {
-  let templateVars = {user: users[req.cookies["user"]]};
-  res.render("urls_login", templateVars);
+  
+  res.render("urls_login", {user: null});
 });
 app.get("/register", (req, res) => {
-  let templateVars = {user: users[req.cookies["user"]]};
-  res.render("urls_register", templateVars);
+
+  res.render("urls_register", {user: null});
 });
 //
 app.get("/", (req, res) => {
@@ -120,23 +133,40 @@ app.get("/fetch", (req, res) => {
   res.send(`a = ${a}`);
 });
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase,
-    user: users[req.cookies["user"]]};
-  res.render("urls_index", templateVars);
+  const user = req.cookies["user"];
+  if (user) {
+    const userURL = urlForUser(user);
+    let templateVars = { urls: userURL,
+      user: req.cookies["user"]};
+    res.render("urls_index", templateVars);
+  } else {
+    res.render("error", {ErrorMessage: "login or register, first", user: null});
+  }
 });
 app.get("/hello", (req, res) => {
   let templateVars = { greeting: 'Hello World!',
-    user: users[req.cookies["user"]]};
+    user: req.cookies["user"]};
   res.render("hello_world", templateVars);
 });
 app.get("/urls/new", (req, res) => {
-  let templateVars = {user: req.cookies["user"]};
-  res.render("urls_new", templateVars);
+  if (req.cookies["user"]) {
+    let templateVars = {user: req.cookies["user"]};
+    res.render("urls_new", templateVars);
+  }
+  res.redirect("/login");
 });
 app.get("/urls/:shortURL", (req, res) => {
-  
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies["user"]};
-  res.render("urls_show", templateVars);
+  if (req.cookies["user"]) {
+    const userURL = urlForUser(req.cookies["user"]);
+    if (req.params.shortURL in userURL) {
+      let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies["user"]};
+      res.render("urls_show", templateVars);
+    } else {
+      res.render("error", {ErrorMessage: "URL doesn't match the id", user: req.cookies["user"]});
+    }
+  } else {
+    res.render("error", {ErrorMessage: "login or register, first", user: null});
+  }
 });
 
 
