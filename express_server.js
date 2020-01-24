@@ -73,7 +73,11 @@ app.get("/urls/:shortURL/edit", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"], user: req.cookies["user"]};
   res.render("urls_show", templateVars);
 });
-
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL]["longURL"];
+  console.log("longURL", longURL);
+  res.redirect(longURL);
+});
 // registration, login, logout
 app.post("/register", (req, res) => {
   if (req.body.email === ""  || req.body.password === "") {
