@@ -48,24 +48,30 @@ app.post("/urls", (req, res) => {
   // this only saves if the user is logged in, is it supposed to remember the user after logging out and in next time/
   urlDatabase[shortURL]["user"] = req.cookies["user"];
   res.redirect("/urls");
-  
- 
-
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  console.log(urlDatabase[req.params.shortURL]["longURL"]);
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  const userURL = urlForUser(req.cookies["user"]);
+  if (req.params.shortURL in userURL) {
+    delete userURL[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    res.render("error", {ErrorMessage: "login or register, first", user: null});
+  }
+});
+app.post("/urls/:shortURL/edit", (req, res) => {
+  const userURL = urlForUser(req.cookies["user"]);
+  if (req.params.shortURL in userURL) {
+    userURL[req.params.shortURL]["longURL"] = req.body.longURL;
+    res.redirect("/urls");
+  } else {
+    res.render("error", {ErrorMessage: "login or register, first", user: null});
+  }
 });
 app.get("/urls/:shortURL/edit", (req, res) => {
 
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]["longURL"], user: req.cookies["user"]};
   res.render("urls_show", templateVars);
-});
-app.post("/urls/:shortURL/edit", (req, res) => {
-  urlDatabase[req.params.shortURL]["longURL"] = req.body.longURL;
-  res.redirect("/urls");
 });
 
 // registration, login, logout
