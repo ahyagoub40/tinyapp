@@ -19,7 +19,9 @@
   },
   "homepage": "https://github.com/ahyagoub40/tinyapp#readme",
   "dependencies": {
+    "bcrypt": "2.0.0",
     "cookie-parser": "^1.4.4",
+    "cookie-session": "file:cookie-session",
     "ejs": "^3.0.1",
     "express": "^4.17.1"
   },
