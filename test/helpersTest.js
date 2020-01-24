@@ -22,4 +22,9 @@ describe('findUserByEmail', function() {
     // Write your assert statement here
     assert.equal(user, expectedOutput);
   });
+  it('should return undefined if email is not in database', function() {
+    const user = findUserByEmail("user123@example.com", testUsers);
+    // Write your assert statement here
+    assert.isUndefined(user);
+  });
 });
