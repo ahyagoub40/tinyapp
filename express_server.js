@@ -59,8 +59,7 @@ app.post("/login", (req, res) => {
     }
 
   } else {
-    res.render("error", {ErrorMessage: "Cannot find email! You might need to register",
-      user: findUserByEmail(req.body.email, users)});
+    res.render("error", {ErrorMessage: "Cannot find email! You might need to register", user: null});
   }
 });
 app.post("/logout", (req, res) => {
@@ -68,7 +67,6 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 app.get("/login", (req, res) => {
-  console.log(req.session.userId);
   res.render("urls_login", {user: users[req.session.userId]});
 });
 app.get("/register", (req, res) => {
@@ -90,22 +88,20 @@ app.get("/set", (req, res) => {
   const a = 1;
   res.send(`a = ${a}`);
 });
-// app.get("/fetch", (req, res) => {
-//   res.send(`a = ${a}`);
-// });
+app.get("/fetch", (req, res) => {
+  res.send(`a = ${a}`);
+});
 app.get("/urls", (req, res) => {
   if (req.session.userId) {
     const userURL = urlForUser(req.session.userId, urlDatabase);
-    let templateVars = { urls: userURL,
-      user: users[req.session.userId]};
+    let templateVars = { urls: userURL, user: users[req.session.userId]};
     res.render("urls_index", templateVars);
   } else {
     res.render("error", {ErrorMessage: "login or register, first", user: null});
   }
 });
 app.get("/hello", (req, res) => {
-  let templateVars = { greeting: 'Hello World!',
-    user: req.session.userId};
+  let templateVars = { greeting: 'Hello World!', user: req.session.userId};
   res.render("hello_world", templateVars);
 });
 app.get("/urls/new", (req, res) => {
@@ -119,10 +115,11 @@ app.get("/urls/:shortURL", (req, res) => {
   if (req.session.userId) {
     const userURL = urlForUser(req.session.userId, urlDatabase);
     if (req.params.shortURL in userURL) {
-      let templateVars = { shortURL: req.params.shortURL, longURL: userURL[req.params.shortURL]["longURL"], user: users[req.session.userId]};
+      let templateVars = { shortURL: req.params.shortURL, longURL: userURL[req.params.shortURL]["longURL"],
+        user: users[req.session.userId]};
       res.render("urls_show", templateVars);
     } else {
-      res.render("error", {ErrorMessage: "URL doesn't match the id", user: users[req.session.userId]});
+      res.render("error", {ErrorMessage: "invalid id", user: users[req.session.userId]});
     }
   } else {
     res.render("error", {ErrorMessage: "login or register, first", user: null});
@@ -131,18 +128,26 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userURL = urlForUser(req.session.userId, urlDatabase);
-  if (req.params.shortURL in userURL) {
-    delete userURL[req.params.shortURL];
-    res.redirect("/urls");
+  if (req.session.userId) {
+    if (req.params.shortURL in userURL) {
+      delete urlDatabase[req.params.shortURL];
+      res.redirect("/urls");
+    } else {
+      res.render("error", {ErrorMessage: "invalid id", user: users[req.session.userId]});
+    }
   } else {
     res.render("error", {ErrorMessage: "login or register, first", user: null});
   }
 });
 app.post("/urls/:shortURL/edit", (req, res) => {
   const userURL = urlForUser(req.session.userId, urlDatabase);
-  if (req.params.shortURL in userURL) {
-    userURL[req.params.shortURL]["longURL"] = req.body.longURL;
-    res.redirect("/urls");
+  if (req.session.userId) {
+    if (req.params.shortURL in userURL) {
+      userURL[req.params.shortURL]["longURL"] = req.body.longURL;
+      res.redirect("/urls");
+    } else {
+      res.render("error", {ErrorMessage: "invalid id", user: users[req.session.userId]});
+    }
   } else {
     res.render("error", {ErrorMessage: "login or register, first", user: null});
   }
@@ -158,7 +163,7 @@ app.get("/u/:shortURL", (req, res) => {
     if (req.params.shortURL in userURL) {
       res.redirect(userURL[req.params.shortURL]["longURL"]);
     } else {
-      res.render("error", {ErrorMessage: "URL doesn't match the id", user: req.session.userId});
+      res.render("error", {ErrorMessage: "invalid id", user: users[req.session.userId]});
     }
   } else {
     res.render("error", {ErrorMessage: "login or register, first", user: null});
